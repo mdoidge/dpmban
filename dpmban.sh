@@ -6,6 +6,12 @@ cp /var/lib/fetch-ban/fetch-ban.db /var/lib/fetch-ban/fetch-ban.db.old
 #run fetch-ban
 /usr/local/bin/fetch-ban.py
 
+if [ $? -ne 0 ]
+
+then
+exit 2
+fi
+
 #generate dpm userlist
 dmlite-shell -e 'userinfo' > /var/lib/fetch-ban/dpm-userlist
 
@@ -35,13 +41,21 @@ do
 grep -q "$DN" /var/lib/fetch-ban/dpm-userlist
 if [ $? -ne 0 ]
 then
+echo Adding "$DN"
 dmlite-shell -e "useradd `echo $DN | sed 's/ /\\\\ /g'`"
 fi
 
 #BAN that user
+grep "$DN" /var/lib/fetch-ban/dpm-userlist | grep -q ARGUS_BAN
+#only ban if not already banned
+if [ $? -ne 0 ]
+then
+echo Banning "$DN"
 dmlite-shell -e "userban `echo $DN | sed 's/ /\\\\ /g'` ARGUS_BAN"
+fi
 
 #close the hideous loop
 done
 
 exit 0
+
